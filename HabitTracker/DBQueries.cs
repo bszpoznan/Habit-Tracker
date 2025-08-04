@@ -57,6 +57,11 @@ namespace HabitTracker.DBQueriesParameters
             SELECT * FROM Activities
             WHERE Date = @Date";
 
+        public const string getActivityByIdQuery = @"
+            SELECT * FROM Activities
+            WHERE Id = @Id";
+    
+
 
 
         public List<Activity> dataSeedsActivities = new List<Activity>()
