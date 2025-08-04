@@ -54,7 +54,7 @@ namespace HabitTracker.DBConnector
 
 
 
-        public int CheckAvtivityID(string name, DateOnly date)
+        public int CheckActivityID(string name, DateOnly date)
         {
             int activityID = -1;
             using (var connection = new SqliteConnection(DBQueries.connectionString))
@@ -84,10 +84,12 @@ namespace HabitTracker.DBConnector
                     {
                         var activity = new Activity
                         {
+                            Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
                             Quantity = reader.GetFloat(2),
                             UoM = reader.GetString(3),
                             Date = DateOnly.FromDateTime(reader.GetDateTime(4))
+                            
                         };
                         activities.Add(activity);
                     }
@@ -95,6 +97,31 @@ namespace HabitTracker.DBConnector
                 connection.Close();
             }
             return activities.Count > 0;
+        }
+
+        public Activity GetActivityById(int id)
+        {
+            Activity activity = new Activity();
+            using (var connection = new SqliteConnection(DBQueries.connectionString))
+            {
+                connection.Open();
+                var commandGetActivity = connection.CreateCommand();
+                commandGetActivity.CommandText = DBQueries.getActivityByIdQuery;
+                commandGetActivity.Parameters.AddWithValue("@Id", id);
+                using (var reader = commandGetActivity.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        activity.Id = reader.GetInt32(0);
+                        activity.Name = reader.GetString(1);
+                        activity.Quantity = reader.GetFloat(2);
+                        activity.UoM = reader.GetString(3);
+                        activity.Date = DateOnly.FromDateTime(reader.GetDateTime(4));
+                    }
+                }
+                connection.Close();
+            }
+            return activity;
         }
 
         public void SeedDatabase()
@@ -155,10 +182,26 @@ namespace HabitTracker.DBConnector
 
         public void UpdateActivity(int id, Activity activity)
         {
+            using (var connection = new SqliteConnection(DBQueries.connectionString))
+            {
+                connection.Open();
+                using (var commandUpdateActivity = connection.CreateCommand())
+                {
+                    commandUpdateActivity.CommandText = DBQueries.updateActivityCommand;
+                    commandUpdateActivity.Parameters.AddWithValue("@Id", id);
+                    commandUpdateActivity.Parameters.AddWithValue("@Name", activity.Name);
+                    commandUpdateActivity.Parameters.AddWithValue("@Quantity", activity.Quantity);
+                    commandUpdateActivity.Parameters.AddWithValue("@UoM", activity.UoM);
+                    commandUpdateActivity.Parameters.AddWithValue("@Date", activity.Date.ToString("yyyy-MM-dd"));
+                    commandUpdateActivity.ExecuteNonQuery();
+
+                }
+                connection.Close();
+            }
 
         }
 
-        public void UpdateActivityQuantity()
+        public void UpdateActivityAddQuantity()
         {
             
         }
