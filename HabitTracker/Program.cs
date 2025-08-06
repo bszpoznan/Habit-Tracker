@@ -1,20 +1,11 @@
-﻿using HabitTracker.Acitivities;
+﻿using HabitTracker;
+using HabitTracker.Acitivities;
 using HabitTracker.DBConnector;
 using HabitTracker.UI;
 
 
-DBConnector dBConnector = new DBConnector();
-//dBConnector.CreateDatabase();
-//dBConnector.SeedDatabase();
-//dBConnector.DeleteAllActivities();
-//dBConnector.SeedDatabase();
-var activities = new List<Activity>();
-dBConnector.GetActivitiesQuery(out activities);
-/*foreach (var activity in activities)
-{
-    Console.WriteLine($"Name: {activity.Name}, Quantity: {activity.Quantity}, UoM: {activity.UoM}, Date: {activity.Date}");
-}
-*/
+DBConnector dbConnector = new DBConnector();
+var activities = dbConnector.GetAllActivities();
 
 bool exit = false;
 UserInterface userInterface = new UserInterface();
@@ -28,9 +19,9 @@ while (!exit)
         case 1:
 
             Activity newActivity = userInterface.EnterActivityDetails();
-            if (!dBConnector.CheckIfActivityExists(newActivity.Name, newActivity.Date))
+            if (!dbConnector.ActivityExists(newActivity.Name, newActivity.Date))
             {
-                dBConnector.AddActivity(newActivity);
+                dbConnector.AddActivity(newActivity);
                 Console.WriteLine("Activity added successfully.\n");
             }
             else
@@ -39,7 +30,8 @@ while (!exit)
             }
             break;
         case 2:
-            if (dBConnector.GetActivitiesQuery(out activities))
+            activities = dbConnector.GetAllActivities();
+            if (activities.Count>0)
             {
                 Console.WriteLine("Activities:");
                 foreach (var activity in activities)
@@ -54,16 +46,37 @@ while (!exit)
             break;
         case 3:
             int idToUpdate = userInterface.GetActivityIDToUpdate();
-            Activity activityToUpdate = dBConnector.GetActivityById(idToUpdate);
+            Activity activityToUpdate = dbConnector.GetActivityById(idToUpdate);
             Activity updatedActivity = userInterface.UpdateActivityDetails(activityToUpdate);
-            dBConnector.UpdateActivity(idToUpdate, updatedActivity);
+            dbConnector.UpdateActivity(idToUpdate, updatedActivity);
             Console.WriteLine("Activity updated successfully.\n");
             break;
         case 4:
             int idToDelete = userInterface.GetActivityIDToDelete();
-            dBConnector.DeleteActivity(idToDelete);
+            dbConnector.DeleteActivity(idToDelete);
             Console.WriteLine("Activity deleted successfully.\n");
             break;  
+        case 5:
+            Filter filterChoice = userInterface.GetFilterChoice();
+            if (filterChoice.filterType == FilterType.FilterByActivityName)
+            {
+                activities = dbConnector.GetActivitiesByName(filterChoice.activityName);
+            }
+            else if (filterChoice.filterType == FilterType.FilterByDate)
+            {
+                activities = dbConnector.GetActivitiesByDate(fromDate: filterChoice.dateFrom, toDate: filterChoice.dateTo);
+            }
+            else
+            {
+                activities = dbConnector.GetAllActivities();
+            }
+
+            foreach (var activity in activities)
+            {
+                Console.WriteLine($"Id: {activity.Id}, Name: {activity.Name}, Quantity: {activity.Quantity}, UoM: {activity.UoM}, Date: {activity.Date}");
+            }
+
+            break;
 
         case 10:
             exit = true;

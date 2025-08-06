@@ -19,13 +19,13 @@ namespace HabitTracker.DBQueriesParameters
                 Date DATE,
                 CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
             )";
-        public const string checkIfActivityExistsQuery = @"
+        public const string ActivityExistsQuery = @"
             SELECT COUNT(*)
                 FROM Activities
                 WHERE Name = @Name AND Date = @Date";
 
 
-        public const string checkActivityIDQuery = @"
+        public const string getActivityIDQuery = @"
             SELECT Id
                 FROM Activities
                 WHERE Name = @Name AND Date = @Date
@@ -42,7 +42,7 @@ namespace HabitTracker.DBQueriesParameters
             DELETE FROM Activities
             WHERE Id = @Id";
 
-        public const string deleteAllCommand = @"
+        public const string deleteAllActivitiesCommand = @"
             DELETE FROM Activities";
 
         public const string updateActivityCommand = @"
@@ -52,10 +52,11 @@ namespace HabitTracker.DBQueriesParameters
         public const string getActivityFilteredByNameQuery = @"
             SELECT * FROM Activities
             WHERE Name = @Name
-            ORDER BY Date DESC, CreatedAt DESC";
+            ORDER BY Date DESC";
         public const string getActivityFilteredByDateQuery = @"
             SELECT * FROM Activities
-            WHERE Date = @Date";
+            WHERE Date BETWEEN @FromDate AND @ToDate
+            ORDER BY Date DESC";
 
         public const string getActivityByIdQuery = @"
             SELECT * FROM Activities

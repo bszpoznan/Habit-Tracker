@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.IO.Pipelines;
 using HabitTracker.Acitivities;
 using HabitTracker.DBConnector;
 
@@ -5,7 +7,7 @@ namespace HabitTracker.UI
 {
     public class UserInterface
     {
-        
+
 
         public void DispalyMenu()
         {
@@ -60,12 +62,33 @@ namespace HabitTracker.UI
             activity.Quantity = quantity;
 
             DateOnly date;
+
             do
             {
-                Console.Write("Enter date of activity (YYYY-MM-DD): ");
+                Console.Write("Enter a date of activity (YYYY-MM-DD). You can type T or t of Today (or press Enter to keep current): ");
                 input = Console.ReadLine();
-            } while (input == null || DateOnly.TryParse(input, out date) == false);
-            activity.Date = date;
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    break;
+                }
+
+                if (input.Equals("T", StringComparison.OrdinalIgnoreCase))
+                {
+                    activity.Date = DateOnly.FromDateTime(DateTime.Now);
+                    break;
+                }
+
+
+                if (DateOnly.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                {
+                    activity.Date = date;
+                    break;
+                }
+
+                Console.WriteLine("Invalid date format. Please enter in YYYY-MM-DD format.");
+
+            } while (true);
 
             return activity;
 
@@ -100,7 +123,7 @@ namespace HabitTracker.UI
             return id;
         }
 
-          public int GetActivityIDToDelete()
+        public int GetActivityIDToDelete()
         {
             string? input;
             int id;
@@ -115,9 +138,9 @@ namespace HabitTracker.UI
         public Activity UpdateActivityDetails(Activity activity)
         {
             Activity resultActivity = new Activity(activity);
-            Console.WriteLine("Enter new details for the activity (leave blank to keep current value).");
+            Console.WriteLine("\nEnter new details for the activity (leave blank to keep current value).");
             Console.WriteLine("Current Data:");
-            Console.WriteLine($"Name: {activity.Name}, Quantity: {activity.Quantity}, UoM: {activity.UoM}, Date: {activity.Date}");
+            Console.WriteLine($"Name: {activity.Name}, Quantity: {activity.Quantity}, UoM: {activity.UoM}, Date: {activity.Date}\n");
 
             string? input;
 
@@ -152,23 +175,160 @@ namespace HabitTracker.UI
             }
 
             DateOnly date;
+
             do
             {
-                Console.Write("Enter new date of activity (YYYY-MM-DD) (or press Enter to keep current): ");
+                Console.Write("Enter new date of activity (YYYY-MM-DD). You can type T or t of Today (or press Enter to keep current): ");
                 input = Console.ReadLine();
-                if (DateOnly.TryParse(input, out date) == true)
+
+                if (string.IsNullOrWhiteSpace(input))
                 {
                     break;
                 }
-            } while (input == null || input == "");
 
-            if (input != null && input.Trim() != "")
-            {
-                resultActivity.Date = date;
-            }
+                if (input.Equals("T", StringComparison.OrdinalIgnoreCase))
+                {
+                    resultActivity.Date = DateOnly.FromDateTime(DateTime.Now);
+                    break;
+                }
+
+
+                if (DateOnly.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                {
+                    resultActivity.Date = date;
+                    break;
+                }
+
+                Console.WriteLine("Invalid date format. Please enter in YYYY-MM-DD format.");
+
+            } while (true);
+
 
             return resultActivity;
-        }                
+        }
+        public Filter GetFilterChoice()
+        {
+            int choice;
+            string? input;
+            Filter resultFilter = new Filter();
+            do
+            {
+                Console.WriteLine("Choose a filter type:");
+                Console.WriteLine("1. Filter by Name");
+                Console.WriteLine("2. Filter by Date");
+                Console.WriteLine("3. No filter");
+                Console.WriteLine();
+                input = Console.ReadLine();
+
+            } while (string.IsNullOrWhiteSpace(input) || Int32.TryParse(input, out choice) == false || choice < 1 || choice > 3);
+
+            switch (choice)
+            {
+                case 1:
+                    resultFilter.filterType = FilterType.FilterByActivityName;
+                    InputActivityNameForFilter(ref resultFilter);
+                    break;
+                case 2:
+                    resultFilter.filterType = FilterType.FilterByDate;
+                    InputActivitiesDateRange(ref resultFilter);
+                    break;
+                case 3:
+                    resultFilter.filterType = FilterType.NoFilter;
+                    break;
+            }
+
+            return resultFilter;
+
+        }
+
+        private bool InputActivitiesDateRange(ref Filter filter)
+        {
+            bool result = true;
+            string? input;
+            DateOnly startingDate;
+            DateOnly endingDate;
+            Console.WriteLine();
+            do
+            {
+                Console.Write("Enter starting date (YYYY-MM-DD). You can type T or t of Today  :");
+                input = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    break;
+                }
+
+                if (input.Equals("T", StringComparison.OrdinalIgnoreCase))
+                {
+                    filter.dateFrom = DateOnly.FromDateTime(DateTime.Now);
+                    break;
+                }
+
+                if (DateOnly.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out startingDate))
+                {
+                    filter.dateFrom = startingDate;
+                    break;
+                }
+
+                Console.WriteLine("Invalid date format. Please enter in YYYY-MM-DD format.");
+
+            } while (true);
+
+            do
+            {
+                Console.Write("Enter ending date (YYYY-MM-DD). You can type T or t of Today:  ");
+                input = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    break;
+                }
+
+                if (input.Equals("T", StringComparison.OrdinalIgnoreCase))
+                {
+                    filter.dateTo = DateOnly.FromDateTime(DateTime.Now);
+                    break;
+                }
+
+                if (DateOnly.TryParseExact(input, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out endingDate))
+                {
+                    if (endingDate <= filter.dateFrom)
+                    {
+                        Console.WriteLine("Ending Date can't be set up for a date before Starting Date.");
+                    }
+                    else
+                    {
+
+                        filter.dateTo = endingDate;
+                        break;
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine("Invalid date format. Please enter in YYYY-MM-DD format.");
+                }
+
+            } while (true);
+
+
+            return result;
+        }
+
+        private bool InputActivityNameForFilter(ref Filter filter)
+        {
+            bool result = true;
+            string? input = null;
+            Console.WriteLine();
+            do
+            {
+                Console.WriteLine("Enter an activity name that you want to filter.");
+                input = Console.ReadLine();
+            } while (string.IsNullOrEmpty(input));
+            filter.activityName = input;
+            return result;
+
+        }
 
     }
 }
